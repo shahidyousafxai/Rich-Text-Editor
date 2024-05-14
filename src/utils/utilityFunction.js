@@ -1,8 +1,10 @@
 import {
-  Editor,
   Transforms,
-  Descendant,
+  Editor,
+  Range,
+  createEditor,
   Element as SlateElement,
+  Descendant,
 } from 'slate'
 
 const LIST_TYPES = ['numbered-list', 'bulleted-list']
@@ -75,6 +77,7 @@ export const isMarkActive = (editor, format) => {
 }
 
 export const Element = ({ attributes, children, element }) => {
+  console.log("======>>>>", attributes, children, element)
   const style = { textAlign: element.align }
   switch (element.type) {
     case 'block-quote':
@@ -113,11 +116,60 @@ export const Element = ({ attributes, children, element }) => {
           {children}
         </ol>
       )
+    case 'link':
+      return (
+        <a style={{ ...style, textDecoration: 'underline', color: 'blue',  }} {...attributes}>
+          {children}
+        </a>
+      )
     default:
       return (
         <p style={style} {...attributes}>
           {children}
         </p>
       )
+  }
+}
+
+export const isLinkActive = editor => {
+  const [link] = Editor.nodes(editor, {
+    match: n =>
+      !Editor.isEditor(n) && SlateElement.isElement(n) && n.type === 'link',
+  })
+  return !!link
+};
+
+export const insertLink = (editor, url) => {
+  if (editor.selection) {
+    wrapLink(editor, url)
+  }
+};
+
+export const unwrapLink = editor => {
+  Transforms.unwrapNodes(editor, {
+    match: n =>
+      !Editor.isEditor(n) && SlateElement.isElement(n) && n.type === 'link',
+  })
+}
+
+
+export const wrapLink = (editor, url) => {
+  if (isLinkActive(editor)) {
+    unwrapLink(editor)
+  }
+
+  const { selection } = editor
+  const isCollapsed = selection && Range.isCollapsed(selection)
+  const link = {
+    type: 'link',
+    url,
+    children: isCollapsed ? [{ text: url }] : [],
+  }
+
+  if (isCollapsed) {
+    Transforms.insertNodes(editor, link)
+  } else {
+    Transforms.wrapNodes(editor, link, { split: true })
+    Transforms.collapse(editor, { edge: 'end' })
   }
 }
