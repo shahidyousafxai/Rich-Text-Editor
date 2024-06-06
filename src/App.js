@@ -1,9 +1,8 @@
-import TextEditor from "./component/TextEditor";
 
 function App() {
   return (
     <div>
-      <TextEditor />
+      <p>Text Editor</p>
     </div>
   );
 }
